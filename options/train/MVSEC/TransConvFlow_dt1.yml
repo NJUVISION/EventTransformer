@@ -1,0 +1,102 @@
+# ------------------------------------------------------------------------
+# Copyright (c) 2021 megvii-model. All Rights Reserved.
+# ------------------------------------------------------------------------
+# Modified from BasicSR (https://github.com/xinntao/BasicSR)
+# Copyright 2018-2020 BasicSR Authors
+# ------------------------------------------------------------------------
+# general settings
+name: MVSEC-DVS-TransConvFlow-dt1
+model_type: TransFlowModel
+num_gpu: 1  # set num_gpu: 0 for cpu mode
+manual_seed: 100
+point_num: &point_num  4096
+height: &height 260
+width: &width 346
+
+
+# dataset and data loader settings
+datasets:
+  train:
+    name: MVSEC-outdoor-day2
+    type: MVSECDataset
+    events_h5: /shared/MVSEC/hdf5/outdoor_day/outdoor_day2_data.hdf5
+    meta_h5: /shared/MVSEC/meta/outdoor_day/outdoor_day2_meta.hdf5
+    mode: train
+    sample_num: *point_num
+    height: *height
+    width: *width
+    augmentation: True
+    dt: 1
+
+    # data loader
+    use_shuffle: true
+    num_worker_per_gpu: 12
+    batch_size_per_gpu: 12
+    dataset_enlarge_ratio: 1
+    prefetch_mode: ~
+
+  val:
+    name: MVSEC-indoor-flying3
+    type: MVSECDataset
+    events_h5: /shared/MVSEC/hdf5/indoor_flying/indoor_flying3_data.hdf5
+    meta_h5: /shared/MVSEC/meta/indoor_flying/indoor_flying3_meta.hdf5
+    mode: val
+    sample_num: *point_num
+    height: *height
+    width: *width
+    dt: 1
+
+# network structures
+network_g:
+  type: EventTransFlow
+  height: *height
+  width: *width
+
+# path
+path:
+  pretrain_network_g: ~
+  strict_load_g: true
+  resume_state: ~
+
+# training settings
+train:
+  optim_g:
+    type: SGD
+    lr: !!float 5e-3
+    momentum: 0.9
+    weight_decay: !!float 1e-4
+
+  scheduler:
+    type: MultiStepLR
+    milestones: [ 15120, 20160 ]
+    gamma: 0.1
+
+  total_iter: 25200
+  warmup_iter: -1 # no warm up
+
+# validation settings
+val:
+  val_freq: !!float 1e4
+  save_img: true
+  height: *height
+  width: *width
+  sample_num: *point_num
+  max_minibatch: 100
+
+  metrics:
+    AEE: # metric name, can be arbitrary
+      type: calculate_AEE
+
+# logging settings
+logger:
+  print_freq: 50
+  save_checkpoint_freq: !!float 2e3
+  use_tb_logger: true
+  wandb:
+    project: event-transformer
+    resume_id: ~
+
+# dist training settings
+dist_params:
+  backend: nccl
+  port: 29500

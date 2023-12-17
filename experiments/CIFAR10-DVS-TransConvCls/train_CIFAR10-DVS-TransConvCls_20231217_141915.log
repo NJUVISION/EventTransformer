@@ -1,0 +1,103 @@
+2023-12-17 14:19:15,840 INFO: 
+Version Information: 
+	PyTorch: 1.11.0
+	TorchVision: 0.12.0
+2023-12-17 14:19:15,841 INFO: 
+  name: CIFAR10-DVS-TransConvCls
+  model_type: TransClsModel
+  num_gpu: 1
+  manual_seed: 100
+  classes: ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'ship', 'truck', 'frog', 'horse']
+  point_num: 2048
+  height: 128
+  width: 128
+  datasets:[
+    train:[
+      name: CIFAR10-DVS
+      type: EventsClsDataset
+      h5: /datasets/DVS/CIFAR10-DVS/cifar10_dvs.h5
+      labels: /datasets/DVS/CIFAR10-DVS/train.json
+      sample_fn: crop
+      sample_num: 2048
+      use_shuffle: True
+      num_worker_per_gpu: 64
+      batch_size_per_gpu: 64
+      dataset_enlarge_ratio: 1
+      prefetch_mode: None
+      phase: train
+    ]
+    val:[
+      name: CIFAR10-DVS
+      type: EventsClsDataset
+      h5: /datasets/DVS/CIFAR10-DVS/cifar10_dvs.h5
+      labels: /datasets/DVS/CIFAR10-DVS/test.json
+      sample_fn: all
+      sample_num: 2048
+      phase: val
+    ]
+  ]
+  network_g:[
+    type: EventTransformer
+    num_classes: 10
+    height: 128
+    width: 128
+  ]
+  path:[
+    pretrain_network_g: None
+    strict_load_g: True
+    resume_state: None
+    root: /workspace/jb/EventTransformer-main
+    experiments_root: /workspace/jb/EventTransformer-main/experiments/CIFAR10-DVS-TransConvCls
+    models: /workspace/jb/EventTransformer-main/experiments/CIFAR10-DVS-TransConvCls/models
+    training_states: /workspace/jb/EventTransformer-main/experiments/CIFAR10-DVS-TransConvCls/training_states
+    log: /workspace/jb/EventTransformer-main/experiments/CIFAR10-DVS-TransConvCls
+    visualization: /workspace/jb/EventTransformer-main/experiments/CIFAR10-DVS-TransConvCls/visualization
+  ]
+  train:[
+    optim_g:[
+      type: SGD
+      lr: 0.01
+      momentum: 0.9
+      weight_decay: 0.0001
+    ]
+    scheduler:[
+      type: MultiStepLR
+      milestones: [15120, 20160]
+      gamma: 0.1
+    ]
+    total_iter: 25200
+    warmup_iter: -1
+  ]
+  val:[
+    val_freq: 25000.0
+    save_img: False
+    height: 128
+    width: 128
+    split: True
+    sample_num: 2048
+    max_minibatch: 100
+    metrics:[
+      acc:[
+        type: calculate_acc
+      ]
+    ]
+  ]
+  logger:[
+    print_freq: 1
+    save_checkpoint_freq: 2000.0
+    use_tb_logger: True
+    wandb:[
+      project: event-transformer
+      resume_id: None
+    ]
+  ]
+  dist_params:[
+    backend: nccl
+    port: 29500
+  ]
+  is_train: True
+  dist: False
+  rank: 0
+  world_size: 1
+
+2023-12-17 14:19:22,224 INFO: Use wandb logger with id=5v1s97bm; project=event-transformer.

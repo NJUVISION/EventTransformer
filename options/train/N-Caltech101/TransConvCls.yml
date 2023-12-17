@@ -1,0 +1,98 @@
+# ------------------------------------------------------------------------
+# Copyright (c) 2021 megvii-model. All Rights Reserved.
+# ------------------------------------------------------------------------
+# Modified from BasicSR (https://github.com/xinntao/BasicSR)
+# Copyright 2018-2020 BasicSR Authors
+# ------------------------------------------------------------------------
+# dataset size 8000
+# general settings
+name: N-Caltech101-TransConvCls
+model_type: TransClsModel
+num_gpu: 1  # set num_gpu: 0 for cpu mode
+manual_seed: 100
+point_num: &point_num  2048
+height: &height 128
+width: &width 128
+
+
+# dataset and data loader settings
+datasets:
+  train:
+    name: N-Caltech101
+    type: EventsClsDataset
+    h5: /datasets/DVS/N-Caltech101/caltech101.h5
+    labels: /datasets/DVS/N-Caltech101/train.json
+    sample_fn: crop
+    sample_num: *point_num
+
+    # data loader
+    use_shuffle: true
+    num_worker_per_gpu: 16
+    batch_size_per_gpu: 64
+    dataset_enlarge_ratio: 1
+    prefetch_mode: ~
+
+  val:
+    name: N-Caltech101
+    type: EventsClsDataset
+    h5: /datasets/DVS/N-Caltech101/caltech101.h5
+    labels: /datasets/DVS/N-Caltech101/test.json
+    sample_fn: all
+    sample_num: *point_num
+
+# network structures
+network_g:
+  type: EventTransformer
+  num_classes: 101
+  height: *height
+  width: *width
+
+# path
+path:
+  pretrain_network_g: ~
+  strict_load_g: true
+  # resume_state: ~
+
+# training settings
+train:
+  optim_g:
+    type: SGD
+    lr: !!float 1e-2
+    momentum: 0.9
+    weight_decay: !!float 1e-4
+
+  scheduler:
+    type: MultiStepLR
+    milestones: [ 15120, 20160 ]
+    gamma: 0.1
+
+  total_iter: 22400
+  warmup_iter: -1 # no warm up
+
+# validation settings
+val:
+  val_freq: !!float 2.5e4
+  save_img: false
+  height: *height
+  width: *width
+  split: true
+  sample_num: *point_num
+  max_minibatch: 20
+
+  metrics:
+    acc: # metric name, can be arbitrary
+      type: calculate_acc
+
+# logging settings
+logger:
+  print_freq: 50
+  save_checkpoint_freq: !!float 3e3
+  use_tb_logger: true
+  wandb:
+    project: event-transformer
+    resume_id: ~
+
+# dist training settings
+dist_params:
+  backend: nccl
+  port: 29500
